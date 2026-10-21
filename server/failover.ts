@@ -15,6 +15,7 @@ import { writeHandoffFile } from "./handoff-file";
 import { buildHandoffPrompt } from "./serialize";
 import type { ContinuityState } from "./state";
 import { userMessages } from "./timeline";
+import { successorRequestKey } from "./request-key";
 
 export interface FailedAgent {
   id: string;
@@ -160,7 +161,7 @@ export async function runFailover(
       ? paseo.workspaces.ref(agent.workspaceId)
       : await paseo.workspaces.open(agent.cwd);
     const created = await workspace.agents.create({
-      idempotencyKey: `continuity:${agent.id}:${request.turnId ?? "manual"}`,
+      idempotencyKey: successorRequestKey(agent.id, request.turnId, target.provider, Date.now()),
       config: {
         provider: `${target.provider}/${target.model}`,
         ...(target.modeId ? { modeId: target.modeId } : {}),

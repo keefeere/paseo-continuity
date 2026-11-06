@@ -13,6 +13,9 @@ interface ChainEditorProps {
   theme: PluginTheme;
 }
 
+const ROW_MIN_CHAIN = 112; // switch row + dropdown/arrow row + padding
+const ROW_MIN_PLAIN = 64; // switch row + padding
+
 export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
   const paseo = usePaseo();
 
@@ -55,6 +58,12 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
 
     return [...chainItems, ...nonChainItems];
   }, [chain, snapshotResult]);
+
+  // The settings host clamps auto-sized children, so reserve the height up front.
+  const listMinHeight = displayItems.reduce(
+    (sum, item) => sum + (item.inChain ? ROW_MIN_CHAIN : ROW_MIN_PLAIN),
+    0,
+  );
 
   const handleToggle = (provider: string, inChain: boolean) => {
     if (inChain) {
@@ -111,7 +120,7 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
         </View>
       )}
 
-      <View style={[styles.list, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
+      <View style={[styles.list, { minHeight: listMinHeight }, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
         {displayItems.length === 0 ? (
           <Text style={{ color: theme.colors.foregroundMuted, padding: 16, textAlign: 'center' }}>
             No providers available.
@@ -131,6 +140,7 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
                 key={`${item.provider}-${item.inChain}`} 
                 style={[
                   styles.row, 
+                  { minHeight: item.inChain ? ROW_MIN_CHAIN : ROW_MIN_PLAIN },
                   { borderBottomColor: theme.colors.border },
                   i === displayItems.length - 1 && { borderBottomWidth: 0 }
                 ]}
@@ -219,6 +229,7 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
 const styles = StyleSheet.create({
   container: {
     gap: 12,
+    flexShrink: 0,
   },
   center: {
     padding: 24,
@@ -232,9 +243,10 @@ const styles = StyleSheet.create({
   list: {
     borderWidth: 1,
     borderRadius: 8,
-    overflow: 'hidden',
+    flexShrink: 0,
   },
   row: {
+    flexShrink: 0,
     padding: 12,
     borderBottomWidth: 1,
     flexDirection: 'column',

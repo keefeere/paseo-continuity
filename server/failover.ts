@@ -1,4 +1,4 @@
-import type { PaseoApi } from "@getpaseo/client";
+import type { PluginHandlerContext } from "@getpaseo/plugin/server";
 import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
 import {
   TRANSITION_KIND,
@@ -15,6 +15,9 @@ import { writeHandoffFile } from "./handoff-file";
 import { buildHandoffPrompt } from "./serialize";
 import type { ContinuityState } from "./state";
 import { userMessages } from "./timeline";
+
+// Derived from the plugin context: "@getpaseo/client" is not resolvable at install time.
+type PaseoApi = PluginHandlerContext["paseo"];
 
 export interface FailedAgent {
   id: string;

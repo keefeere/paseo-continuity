@@ -37,7 +37,7 @@ export function Dropdown({ options, value, onChange, theme, fallbackLabel }: Dro
   };
 
   return (
-    <View style={{ minWidth: 160 }}>
+    <View style={{ minWidth: open ? 220 : 160, flexShrink: 0 }}>
       <Pressable
         accessibilityRole="button"
         onPress={() => (open ? close() : setOpen(true))}
@@ -76,7 +76,7 @@ export function Dropdown({ options, value, onChange, theme, fallbackLabel }: Dro
               style={{ color: theme.colors.foreground, fontSize: 12, padding: 8 }}
             />
           ) : null}
-          <ScrollView style={{ maxHeight: 220 }} keyboardShouldPersistTaps="handled">
+          <ScrollView nestedScrollEnabled style={{ maxHeight: 220, flexGrow: 0 }} keyboardShouldPersistTaps="handled">
             {visible.length === 0 ? (
               <Text style={{ color: theme.colors.foregroundMuted, fontSize: 12, padding: 8 }}>No matches</Text>
             ) : (

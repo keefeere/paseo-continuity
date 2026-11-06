@@ -111,7 +111,7 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
         </View>
       )}
 
-      <ScrollView style={[styles.list, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
+      <ScrollView nestedScrollEnabled style={[styles.list, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
         {displayItems.length === 0 ? (
           <Text style={{ color: theme.colors.foregroundMuted, padding: 16, textAlign: 'center' }}>
             No providers available.
@@ -218,7 +218,6 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     gap: 12,
   },
   center: {
@@ -233,7 +232,9 @@ const styles = StyleSheet.create({
   list: {
     borderWidth: 1,
     borderRadius: 8,
-    maxHeight: 400,
+    maxHeight: 480,
+    flexGrow: 0,
+    flexShrink: 0,
   },
   row: {
     padding: 12,

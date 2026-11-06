@@ -1,10 +1,9 @@
 import { usePaseo } from "@getpaseo/plugin/client";
 import type { PluginTheme } from "@getpaseo/plugin";
-import { SettingsRow, SettingsSelect, SettingsSwitch } from "@getpaseo/plugin/client/ui";
+import { SettingsSelect, SettingsSwitch } from "@getpaseo/plugin/client/ui";
 import { useQuery } from "@tanstack/react-query";
 import { Text } from "react-native";
 import type { ContinuitySettings } from "../shared/settings";
-import { Dropdown } from "./dropdown";
 
 const INPUT_OPTIONS = ["10000", "20000", "30000", "60000", "100000"].map((value) => ({
   label: `${Number(value) / 1000}k chars`,
@@ -40,29 +39,26 @@ export function SummarySettings({ values, save, theme }: Props) {
       />
       {summary.enabled ? (
         <>
-          <SettingsRow label="Summary provider">
-            <Dropdown
-              theme={theme}
-              value={summary.provider}
-              fallbackLabel="Select provider…"
-              options={providers.map((e) => ({ value: e.provider, label: e.label ?? e.provider }))}
-              onChange={(provider) => update({ provider, model: null })}
-            />
-          </SettingsRow>
-          <SettingsRow label="Summary model">
-            <Dropdown
-              theme={theme}
-              value={summary.model}
-              fallbackLabel="Default model"
-              options={[
-                { value: null, label: "Default model" },
-                ...(selected?.models ?? [])
-                  .filter((m) => m.isSelectable !== false)
-                  .map((m) => ({ value: m.id, label: m.label ?? m.id })),
-              ]}
-              onChange={(model) => update({ model })}
-            />
-          </SettingsRow>
+          <SettingsSelect
+            label="Summary provider"
+            value={summary.provider ?? ""}
+            options={[
+              { label: "Select provider…", value: "" },
+              ...providers.map((e) => ({ label: e.label ?? e.provider, value: e.provider })),
+            ]}
+            onValueChange={(provider: string) => update({ provider: provider || null, model: null })}
+          />
+          <SettingsSelect
+            label="Summary model"
+            value={summary.model ?? ""}
+            options={[
+              { label: "Default model", value: "" },
+              ...(selected?.models ?? [])
+                .filter((m) => m.isSelectable !== false)
+                .map((m) => ({ label: m.label ?? m.id, value: m.id })),
+            ]}
+            onValueChange={(model: string) => update({ model: model || null })}
+          />
           <SettingsSelect
             label="Transcript size sent to summarizer"
             value={String(summary.inputChars)}

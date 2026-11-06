@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, Switch, Pressable, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Switch, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { usePaseo } from '@getpaseo/plugin/client';
 import type { PluginTheme } from "@getpaseo/plugin";
@@ -111,7 +111,7 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
         </View>
       )}
 
-      <ScrollView nestedScrollEnabled style={[styles.list, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
+      <View style={[styles.list, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
         {displayItems.length === 0 ? (
           <Text style={{ color: theme.colors.foregroundMuted, padding: 16, textAlign: 'center' }}>
             No providers available.
@@ -211,7 +211,7 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
             );
           })
         )}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -232,9 +232,7 @@ const styles = StyleSheet.create({
   list: {
     borderWidth: 1,
     borderRadius: 8,
-    maxHeight: 480,
-    flexGrow: 0,
-    flexShrink: 0,
+    overflow: 'hidden',
   },
   row: {
     padding: 12,

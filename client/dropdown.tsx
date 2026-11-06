@@ -16,6 +16,9 @@ interface DropdownProps {
   fallbackLabel?: string;
 }
 
+const ROW_HEIGHT = 32;
+const MAX_LIST_HEIGHT = 224;
+
 /** Inline dropdown; shows a filter box once the list is long enough to need one. */
 export function Dropdown({ options, value, onChange, theme, fallbackLabel }: DropdownProps) {
   const [open, setOpen] = useState(false);
@@ -30,6 +33,9 @@ export function Dropdown({ options, value, onChange, theme, fallbackLabel }: Dro
       (option) => option.label.toLowerCase().includes(needle) || option.value?.toLowerCase().includes(needle),
     );
   }, [options, query]);
+
+  // Explicit height: a bare maxHeight collapses inside Paseo's settings card.
+  const listHeight = Math.min(MAX_LIST_HEIGHT, Math.max(visible.length, 1) * ROW_HEIGHT);
 
   const close = () => {
     setOpen(false);
@@ -76,9 +82,13 @@ export function Dropdown({ options, value, onChange, theme, fallbackLabel }: Dro
               style={{ color: theme.colors.foreground, fontSize: 12, padding: 8 }}
             />
           ) : null}
-          <ScrollView nestedScrollEnabled style={{ maxHeight: 220, flexGrow: 0 }} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            nestedScrollEnabled
+            style={{ height: listHeight, flexGrow: 0, flexShrink: 0 }}
+            keyboardShouldPersistTaps="handled"
+          >
             {visible.length === 0 ? (
-              <Text style={{ color: theme.colors.foregroundMuted, fontSize: 12, padding: 8 }}>No matches</Text>
+              <Text style={{ color: theme.colors.foregroundMuted, fontSize: 12, height: ROW_HEIGHT, paddingHorizontal: 8, textAlignVertical: "center" }}>No matches</Text>
             ) : (
               visible.map((option) => (
                 <Pressable
@@ -88,7 +98,9 @@ export function Dropdown({ options, value, onChange, theme, fallbackLabel }: Dro
                     close();
                   }}
                   style={{
-                    padding: 8,
+                    height: ROW_HEIGHT,
+                    paddingHorizontal: 8,
+                    justifyContent: "center",
                     backgroundColor: option.value === value ? theme.colors.surface2 : "transparent",
                   }}
                 >

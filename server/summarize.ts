@@ -1,8 +1,11 @@
-import type { PaseoApi } from "@getpaseo/client";
+import type { PluginHandlerContext } from "@getpaseo/plugin/server";
 import type { AgentTimelineItem } from "@getpaseo/protocol/agent-types";
 import type { ContinuitySettings } from "../shared/settings";
 import { LABEL } from "../shared/labels";
 import { buildHandoffPrompt, redact, type HandoffMeta } from "./serialize";
+
+// Derived from the plugin context: "@getpaseo/client" is not resolvable at install time.
+type PaseoApi = PluginHandlerContext["paseo"];
 
 interface SummarySource {
   id: string;

@@ -1,11 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, Switch, Pressable, ActivityIndicator, ScrollView, StyleSheet } from 'react-native';
+import { Text } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { usePaseo } from '@getpaseo/plugin/client';
 import type { PluginTheme } from "@getpaseo/plugin";
 import type { ChainEntry } from "../shared/settings";
 import { providerBadge } from '../shared/labels';
-import { Dropdown } from './dropdown';
+import { SettingsRow, SettingsSelect, SettingsSwitch } from '@getpaseo/plugin/client/ui';
 
 interface ChainEditorProps {
   chain: ChainEntry[];
@@ -64,18 +64,12 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
     }
   };
 
-  const handleMoveUp = (index: number) => {
-    if (index <= 0) return;
-    const newChain = [...chain];
-    [newChain[index - 1], newChain[index]] = [newChain[index], newChain[index - 1]];
-    onChainChange(newChain);
-  };
-
-  const handleMoveDown = (index: number) => {
-    if (index >= chain.length - 1) return;
-    const newChain = [...chain];
-    [newChain[index + 1], newChain[index]] = [newChain[index], newChain[index + 1]];
-    onChainChange(newChain);
+  const handleMoveTo = (from: number, to: number) => {
+    if (from === to || to < 0 || to >= chain.length) return;
+    const next = [...chain];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved!);
+    onChainChange(next);
   };
 
   const handlePatch = (index: number, patch: Partial<ChainEntry>) => {
@@ -84,195 +78,81 @@ export function ChainEditor({ chain, onChainChange, theme }: ChainEditorProps) {
     onChainChange(newChain);
   };
 
+  const muted = { color: theme.colors.foregroundMuted, fontSize: 13 } as const;
+
   if (isLoading) {
     return (
-      <View style={[styles.center, { backgroundColor: theme.colors.surface1 }]}>
-        <ActivityIndicator color={theme.colors.accent} />
-        <Text style={{ color: theme.colors.foregroundMuted, marginTop: 8 }}>Loading providers...</Text>
-      </View>
+      <SettingsRow label="Providers">
+        <Text style={muted}>Loading…</Text>
+      </SettingsRow>
     );
   }
 
   if (error) {
     return (
-      <View style={[styles.center, { backgroundColor: theme.colors.surface1 }]}>
-        <Text style={{ color: theme.colors.statusDanger }}>Failed to load providers.</Text>
-      </View>
+      <SettingsRow label="Providers">
+        <Text style={{ color: theme.colors.statusDanger, fontSize: 13 }}>Failed to load providers.</Text>
+      </SettingsRow>
     );
   }
 
+  // Only host settings components are used: the host fixes the height of custom
+  // content, so anything that expands inline (lists, dropdowns) is painted over
+  // the rows below it.
   return (
-    <View style={styles.container}>
+    <>
       {chain.length < 2 && (
-        <View style={styles.warningBox}>
-          <Text style={{ color: theme.colors.statusWarning, fontSize: 13 }}>
-            Warning: A fallback chain should ideally have at least 2 providers for continuity.
-          </Text>
-        </View>
+        <SettingsRow label="Warning" hint="A fallback chain should ideally have at least 2 providers for continuity." />
       )}
-
-      <ScrollView style={[styles.list, { backgroundColor: theme.colors.surface1, borderColor: theme.colors.border }]}>
-        {displayItems.length === 0 ? (
-          <Text style={{ color: theme.colors.foregroundMuted, padding: 16, textAlign: 'center' }}>
-            No providers available.
-          </Text>
-        ) : (
-          displayItems.map((item, i) => {
-            const isFirstChecked = item.inChain && item.chainIndex === 0;
-            const isLastChecked = item.inChain && item.chainIndex === chain.length - 1;
-            
-            const models = item.snapshotEntry?.models || [];
-            const modes = item.snapshotEntry?.modes || [];
-            
-            const badge = providerBadge(item.provider, item.chainEntry?.model);
-
-            return (
-              <View 
-                key={`${item.provider}-${item.inChain}`} 
-                style={[
-                  styles.row, 
-                  { borderBottomColor: theme.colors.border },
-                  i === displayItems.length - 1 && { borderBottomWidth: 0 }
-                ]}
-              >
-                <View style={styles.mainContent}>
-                  <Switch
-                    value={item.inChain}
-                    onValueChange={() => handleToggle(item.provider, item.inChain)}
-                    trackColor={{ true: theme.colors.accent, false: theme.colors.surface2 }}
+      {displayItems.length === 0 && <SettingsRow label="No providers available" />}
+      {displayItems.map((item) => {
+        const models = (item.snapshotEntry?.models ?? []).filter((m: any) => m.isSelectable !== false);
+        const modes = item.snapshotEntry?.modes ?? [];
+        const badge = providerBadge(item.provider, item.chainEntry?.model);
+        const index = item.chainIndex;
+        return (
+          <React.Fragment key={item.provider}>
+            <SettingsSwitch
+              label={`${badge.badge} ${item.label}`}
+              hint={item.isUnknown ? 'Unknown or unavailable provider' : undefined}
+              value={item.inChain}
+              onValueChange={() => handleToggle(item.provider, item.inChain)}
+            />
+            {item.inChain && index !== null && (
+              <>
+                <SettingsSelect
+                  label="Position in chain"
+                  value={String(index + 1)}
+                  options={chain.map((_, i) => ({ label: String(i + 1), value: String(i + 1) }))}
+                  onValueChange={(v: string) => handleMoveTo(index, Number(v) - 1)}
+                />
+                {models.length > 1 && (
+                  <SettingsSelect
+                    label="Model"
+                    value={item.chainEntry?.model ?? ''}
+                    options={[
+                      { label: 'Default model', value: '' },
+                      ...models.map((m: any) => ({ label: (m.label ?? m.id) as string, value: m.id as string })),
+                    ]}
+                    onValueChange={(v: string) => handlePatch(index, { model: v || null })}
                   />
-                  
-                  <View style={styles.labelContainer}>
-                    <Text style={{ color: item.isUnknown ? theme.colors.statusWarning : theme.colors.foreground, fontWeight: '500' }}>
-                      {badge.badge} {item.label}
-                    </Text>
-                    {item.isUnknown && (
-                      <Text style={{ color: theme.colors.statusWarning, fontSize: 12 }}>
-                        Unknown or unavailable provider
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
-                {item.inChain && (
-                  <View style={styles.actionsContent}>
-                    {models.length > 1 && (
-                      <Dropdown
-                        theme={theme}
-                        fallbackLabel="Default model"
-                        value={item.chainEntry?.model ?? null}
-                        options={[
-                          { value: null, label: "Default model" },
-                          ...models.map((m: any) => ({ value: m.id as string, label: (m.label ?? m.id) as string })),
-                        ]}
-                        onChange={(model) => handlePatch(item.chainIndex as number, { model })}
-                      />
-                    )}
-
-                    {modes.length > 1 && (
-                      <Dropdown
-                        theme={theme}
-                        fallbackLabel="Default mode"
-                        value={item.chainEntry?.modeId ?? null}
-                        options={[
-                          { value: null, label: "Default mode" },
-                          ...modes.map((m: any) => ({ value: m.id as string, label: (m.label ?? m.id) as string })),
-                        ]}
-                        onChange={(modeId) => handlePatch(item.chainIndex as number, { modeId })}
-                      />
-                    )}
-
-                    <View style={styles.orderControls}>
-                      <Pressable 
-                        disabled={isFirstChecked}
-                        onPress={() => handleMoveUp(item.chainIndex as number)}
-                        style={[
-                          styles.iconBtn, 
-                          { backgroundColor: isFirstChecked ? 'transparent' : theme.colors.surface2 }
-                        ]}
-                      >
-                        <Text style={{ color: isFirstChecked ? theme.colors.foregroundMuted : theme.colors.foreground }}>↑</Text>
-                      </Pressable>
-                      
-                      <Pressable 
-                        disabled={isLastChecked}
-                        onPress={() => handleMoveDown(item.chainIndex as number)}
-                        style={[
-                          styles.iconBtn, 
-                          { backgroundColor: isLastChecked ? 'transparent' : theme.colors.surface2 }
-                        ]}
-                      >
-                        <Text style={{ color: isLastChecked ? theme.colors.foregroundMuted : theme.colors.foreground }}>↓</Text>
-                      </Pressable>
-                    </View>
-                  </View>
                 )}
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
-    </View>
+                {modes.length > 1 && (
+                  <SettingsSelect
+                    label="Mode"
+                    value={item.chainEntry?.modeId ?? ''}
+                    options={[
+                      { label: 'Default mode', value: '' },
+                      ...modes.map((m: any) => ({ label: (m.label ?? m.id) as string, value: m.id as string })),
+                    ]}
+                    onValueChange={(v: string) => handlePatch(index, { modeId: v || null })}
+                  />
+                )}
+              </>
+            )}
+          </React.Fragment>
+        );
+      })}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    gap: 12,
-  },
-  center: {
-    padding: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 8,
-  },
-  warningBox: {
-    padding: 8,
-  },
-  list: {
-    borderWidth: 1,
-    borderRadius: 8,
-    maxHeight: 400,
-  },
-  row: {
-    padding: 12,
-    borderBottomWidth: 1,
-    flexDirection: 'column',
-    gap: 8,
-  },
-  mainContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  labelContainer: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  actionsContent: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-end',
-    gap: 8,
-    paddingLeft: 44, // Align with text past the switch
-  },
-  selectorBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  orderControls: {
-    flexDirection: 'row',
-    gap: 4,
-    marginLeft: 8,
-  },
-  iconBtn: {
-    width: 28,
-    height: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
-  }
-});

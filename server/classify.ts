@@ -14,6 +14,9 @@ export interface Classification {
 const QUOTA = [
   /insufficient[_ ]quota/i,
   /usage limit (?:reached|exceeded)/i,
+  // Codex phrases it with "has been" in the middle: "The usage limit has been reached
+  // (stopReason=error, model=openai-codex/gpt-6.1-sol)". Without this the failover stays blind.
+  /usage limit\b[\s\S]{0,24}\breached\b/i,
   /you(?:'|’)?ve (?:hit|reached) your (?:usage |weekly |daily |monthly |session )?limit/i,
   /out of credits/i,
   /credit balance is too low/i,

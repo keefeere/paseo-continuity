@@ -11,7 +11,27 @@ const completed = { kind: "completed" } as const;
 
 describe("classifyTurn", () => {
   it("detects insufficient_quota on a failed outcome", () => {
-    const result = classifyTurn(failed("429 insufficient_quota: You exceeded your current quota"), [user("fix it")], ALL);
+    const result = classifyTurn(
+      failed("429 insufficient_quota: You exceeded your current quota"),
+      [user("fix it")],
+      ALL,
+    );
+    expect(result?.class).toBe("quota");
+  });
+
+  it('detects a Codex usage limit phrased with "has been reached"', () => {
+    const result = classifyTurn(
+      failed("Codex error: The usage limit has been reached"),
+      [
+        user("fix it"),
+        {
+          type: "error",
+          message:
+            "[System Error] Codex error: The usage limit has been reached (stopReason=error, model=openai-codex/gpt-6.1-sol)",
+        } as AgentTimelineItem,
+      ],
+      ALL,
+    );
     expect(result?.class).toBe("quota");
   });
 
@@ -28,7 +48,11 @@ describe("classifyTurn", () => {
   });
 
   it("detects rate limits from an error item in the latest turn", () => {
-    const result = classifyTurn(failed("turn failed"), [user("go"), { type: "error", message: "rate_limit_error: Too many requests" }], ALL);
+    const result = classifyTurn(
+      failed("turn failed"),
+      [user("go"), { type: "error", message: "rate_limit_error: Too many requests" }],
+      ALL,
+    );
     expect(result?.class).toBe("rate_limit");
   });
 
@@ -60,13 +84,19 @@ describe("classifyTurn", () => {
   });
 
   it("never fires on canceled turns", () => {
-    expect(classifyTurn({ kind: "canceled", reason: "usage limit reached" }, [user("x")], ALL)).toBeNull();
+    expect(
+      classifyTurn({ kind: "canceled", reason: "usage limit reached" }, [user("x")], ALL),
+    ).toBeNull();
   });
 
   it("respects disabled triggers", () => {
-    expect(classifyTurn(failed("rate limited"), [user("x")], { ...ALL, rateLimit: false })).toBeNull();
+    expect(
+      classifyTurn(failed("rate limited"), [user("x")], { ...ALL, rateLimit: false }),
+    ).toBeNull();
     expect(classifyTurn(failed("overloaded_error"), [user("x")], ALL)).toBeNull();
-    expect(classifyTurn(failed("overloaded_error"), [user("x")], { ...ALL, overloaded: true })?.class).toBe("overloaded");
+    expect(
+      classifyTurn(failed("overloaded_error"), [user("x")], { ...ALL, overloaded: true })?.class,
+    ).toBe("overloaded");
   });
 
   it("ignores plain failures unrelated to limits", () => {
@@ -80,7 +110,9 @@ describe("parseResetAt", () => {
     expect(parseResetAt("Please try again in 20 minutes", now)).toBe(now + 20 * 60_000);
   });
   it("parses clock times, rolling to tomorrow when already past", () => {
-    expect(parseResetAt("limit resets at 3pm", now)).toBe(new Date(2026, 8, 30, 15, 0, 0).getTime());
+    expect(parseResetAt("limit resets at 3pm", now)).toBe(
+      new Date(2026, 8, 30, 15, 0, 0).getTime(),
+    );
     expect(parseResetAt("resets 9am", now)).toBe(new Date(2026, 9, 1, 9, 0, 0).getTime());
   });
 });
